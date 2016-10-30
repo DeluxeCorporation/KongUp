@@ -25,8 +25,9 @@ def add_to_kong(request_path,port):
 
 
 def notifier(is_successful, request_path):
+    gateway_link = "https://" + KONG_HOST + ":8243" + request_path
     if is_successful:
-        message = '{{"color":"green","message":"{API} KongedUP (successful)","notify":true,"message_format":"text"}}'.format(API=request_path)
+        message = '{{"color":"green","message":"{API} KongedUP (successful), {l}","notify":true,"message_format":"text"}}'.format(API=request_path, l=gateway_link)
     else:
         message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=request_path)
     m = requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
