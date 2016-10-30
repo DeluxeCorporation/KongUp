@@ -16,7 +16,7 @@ def add_to_kong(request_path,port):
         print("Could not add api to gateway")
 
 def listener():
-    cli = Client()
+    cli = Client(version='auto')
     for event in cli.events():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
@@ -24,7 +24,7 @@ def listener():
 
 
 def event_handler(event):
-    cli = Client()
+    cli = Client(version='auto')
     container = cli.inspect_container(event['id'])
 
     if len(container['NetworkSettings']['Ports']) > 1:
