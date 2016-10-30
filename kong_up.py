@@ -10,7 +10,7 @@ HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
 def add_to_kong(request_path,port):
     upstream_url = "http://" + HOSTNAME + ":" + port
-    k = requests.post('http://' + KONG_HOST + ':8001/apis/', data={"upstream_url": upstream_url, "request_path": request_path, "strip_request_path": True})
+    k = requests.put('http://' + KONG_HOST + ':8001/apis/', data={"upstream_url": upstream_url, "request_path": request_path, "strip_request_path": True})
     if k.status_code == 201:
         print("Successfully added", request_path, "to gateway")
         notifier(True, request_path)
