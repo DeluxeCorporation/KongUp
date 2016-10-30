@@ -20,9 +20,9 @@ def add_to_kong(request_path,port):
 
 def notifier(is_successful, request_path):
     if is_successful:
-        message = '{"color":"green","message":"${API} KongedUP (successful)","notify":true,"message_format":"text"}'.format(API=request_path)
+        message = '{{"color":"green","message":"{API} KongedUP (successful)","notify":true,"message_format":"text"}}'.format(API=request_path)
     else:
-        message = '{"color":"green","message":"${API} not KongedUP (failed)","notify":true,"message_format":"text"}'.format(API=request_path)
+        message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=request_path)
     m = requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
 
 def listener():
@@ -47,4 +47,4 @@ def event_handler(event):
 
 if __name__ == '__main__':
     listener()
-# "https://dlxcorp.hipchat.com/v2/room/3272529/notification?auth_token=JpVrfU5CRB5kejefhafWk33iPmm9MvyGFImzEZBO"
+
