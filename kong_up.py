@@ -15,7 +15,7 @@ def add_to_kong(request_path,port):
         print("Successfully added", request_path, "to gateway")
         notifier(True, request_path)
     else:
-        print("Could not add api to gateway")
+        print("Could not add api to gateway", k.json())
         notifier(False, request_path)
 
 def notifier(is_successful, request_path):
