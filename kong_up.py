@@ -5,7 +5,7 @@ import os
 import requests
 
 KONG_HOST = os.getenv("KONG_HOST")
-HOSTNAME = os.getenv("HOST_NAME")
+HOSTNAME = os.getenv("HOST_NAME") if  os.getenv("HOST_NAME") else socket.gethostname()
 HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
 def add_to_kong(request_path,port):
