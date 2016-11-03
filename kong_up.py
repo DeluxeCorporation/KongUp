@@ -47,7 +47,7 @@ def event_handler(event):
     if len(container['NetworkSettings']['Ports']) > 1:
         raise NotImplementedError("Only one port is suppored atm")
 
-    if container['Config']['Labels'].get('GATEWAY_VISIABLE') == "True": 
+    if container['Config']['Labels'].get('GATEWAY_VISIBLE') == "True": 
         port = list(container['NetworkSettings']['Ports'].values())[0][0]['HostPort']
         request_path = container['Config']['Labels']['GATEWAY_REQUEST_PATH']
         add_to_kong(request_path,port)
