@@ -12,7 +12,7 @@ HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
 def get_api(request_path):
     '''
-    Retrun API is API exists, else False
+    Return API is API exists, else False
     '''
     apis = requests.get('http://' + KONG_HOST + ':8001/apis/').json()['data']
     for api in apis:
@@ -22,6 +22,9 @@ def get_api(request_path):
 
 
 def add_to_kong(request_path, port):
+    '''
+    Add request_path to Kong on port and HOSTNAME
+    '''
     upstream_url = "http://" + HOSTNAME + ":" + port
 
     api = get_api(request_path)
@@ -46,23 +49,40 @@ def add_to_kong(request_path, port):
 
 
 def notifier(is_successful, request_path):
+    '''
+    Send a notification to hipchat
+
+    :param is_successful: (Boolean) - True if api was added successfully, false otherwise
+    :param request_path: (String) - Request path to the api that was/wasn't added
+    '''
     gateway_link = "https://" + KONG_HOST + ":8243" + request_path
     if is_successful:
-        message = '{{"color":"green","message":"{API} KongedUP (successful), {l}","notify":true,"message_format":"text"}}'.format(API=request_path, l=gateway_link)
+        message = '{{"color":"green","message":"{API} KongedUP (successful), {link}","notify":true,"message_format":"text"}}'.format(API=request_path, link=gateway_link)
     else:
         message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=request_path)
-    m = requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
+    requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
 
 
 def listener():
+    '''
+    Listen to docker events, and invoke event_handler if a
+    container was started.
+    '''
     cli = Client(version='auto')
     for event in cli.events():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
-            event_handler(event)
+            try:
+                event_handler(event)
+            except Exception as e:
+                notifier(False, e)
+                continue
 
 
 def event_handler(event):
+    '''
+    Inspect the container, and wire it up to the gateway if GATEWAY_VISIBLE is set to "True"
+    '''
     cli = Client(version='auto')
     container = cli.inspect_container(event['id'])
 
@@ -73,6 +93,7 @@ def event_handler(event):
         port = list(container['NetworkSettings']['Ports'].values())[0][0]['HostPort']
         request_path = container['Config']['Labels']['GATEWAY_REQUEST_PATH']
         add_to_kong(request_path, port)
+
 
 if __name__ == '__main__':
     listener()
