@@ -106,7 +106,7 @@ def rewire():
         if container['Labels'].get('GATEWAY_VISIBLE') == "True":
             print(container)
             if not container['Ports']:
-                notifier(false, str(container))
+                notifier(False, str(container))
             else:
                 port = str(list(container['Ports'])[0]['PublicPort'])
                 request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
