@@ -74,6 +74,7 @@ def listener():
     for event in cli.events():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
+            time.sleep(5)
             try:
                 event_handler(event)
             except Exception as e:
@@ -99,6 +100,7 @@ def event_handler(event):
 
 def rewire():
     cli = Client(version='auto')
+    time.sleep(5)
     containers = cli.containers()
     for container in containers:
         if container['Labels'].get('GATEWAY_VISIBLE') == "True":
