@@ -38,6 +38,8 @@ def add_to_kong(request_path, port):
             "request_path": request_path,
             "created_at": int(time.time())}
 
+    print(api)
+
     k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
 
     if k.status_code == 201 or k.status_code == 200:
@@ -91,9 +93,22 @@ def event_handler(event):
 
     if container['Config']['Labels'].get('GATEWAY_VISIBLE') == "True":
         port = list(container['NetworkSettings']['Ports'].values())[0][0]['HostPort']
-        request_path = container['Config']['Labels']['GATEWAY_REQUEST_PATH']
-        add_to_kong(request_path, port)
+        request_path = container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
+        if request_path: 
+            add_to_kong(request_path, port)
 
+def rewire():
+    cli = Client(version='auto')
+    containers = cli.containers()
+    for container in containers:
+        if container['Labels'].get('GATEWAY_VISIBLE') == "True":
+            port = str(list(container['Ports'])[0]['PublicPort'])
+            request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
+            if request_path: 
+                print("Adding existing container")
+                add_to_kong(request_path, port)
 
 if __name__ == '__main__':
+    print("started")
+    rewire()
     listener()
