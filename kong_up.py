@@ -102,6 +102,8 @@ def rewire():
     containers = cli.containers()
     for container in containers:
         if container['Labels'].get('GATEWAY_VISIBLE') == "True":
+            print(container)
+            print(list(container['Ports']))
             port = str(list(container['Ports'])[0]['PublicPort'])
             request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
             if request_path: 
