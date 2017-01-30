@@ -105,12 +105,14 @@ def rewire():
     for container in containers:
         if container['Labels'].get('GATEWAY_VISIBLE') == "True":
             print(container)
-            print(list(container['Ports']))
-            port = str(list(container['Ports'])[0]['PublicPort'])
-            request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
-            if request_path: 
-                print("Adding existing container")
-                add_to_kong(request_path, port)
+            if not container['Ports']:
+                notifier(false, str(container))
+            else:
+                port = str(list(container['Ports'])[0]['PublicPort'])
+                request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
+                if request_path: 
+                    print("Adding existing container")
+                    add_to_kong(request_path, port)
 
 if __name__ == '__main__':
     print("started")
