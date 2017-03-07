@@ -38,8 +38,6 @@ def add_to_kong(request_path, port):
             "request_path": request_path,
             "created_at": int(time.time())}
 
-    print(api)
-
     k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
 
     if k.status_code == 201 or k.status_code == 200:
@@ -81,7 +79,20 @@ def listener():
                 notifier(False, e)
                 continue
 
-
+def get_port_from_ip_table(pvt_c_id):
+    '''
+    Return exposed port by looking it up on IP tables
+    '''
+    
+    cmd = 'iptables -t nat -L -n | grep "{pvt_c_id}"'
+    cmd = cmd.format(pvt_c_id=pvt_c_id)
+    iptables = os.popen(cmd).read()
+    iptable_rows = iptables.split('\n')
+    DNAT = list(filter(lambda x: x.startswith('DNAT'), iptable_rows))[0].split()
+    dpt = list(filter(lambda x: x.startswith('dpt'), DNAT))[0]
+    port = dpt.split(':')[-1]
+    return port
+    
 def event_handler(event):
     '''
     Inspect the container, and wire it up to the gateway if GATEWAY_VISIBLE is set to "True"
@@ -89,11 +100,9 @@ def event_handler(event):
     cli = Client(version='auto')
     container = cli.inspect_container(event['id'])
 
-    if len(container['NetworkSettings']['Ports']) > 1:
-        raise NotImplementedError("Only one port is suppored atm")
-
     if container['Config']['Labels'].get('GATEWAY_VISIBLE') == "True":
-        port = list(container['NetworkSettings']['Ports'].values())[0][0]['HostPort']
+        pvt_c_id = container['Config']['Labels'].get('io.rancher.container.ip')[:-3]
+        port = get_port_from_ip_table(pvt_c_id)
         request_path = container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
         if request_path: 
             add_to_kong(request_path, port)
@@ -103,16 +112,17 @@ def rewire():
     time.sleep(5)
     containers = cli.containers()
     for container in containers:
-        if container['Labels'].get('GATEWAY_VISIBLE') == "True":
-            print(container)
-            if not container['Ports']:
-                notifier(False, str(container))
-            else:
-                port = str(list(container['Ports'])[0]['PublicPort'])
+        try:
+            if container['Labels'].get('GATEWAY_VISIBLE') == "True":
+                print(container['Names'])
+                pvt_c_id = container['Labels'].get('io.rancher.container.ip')[:-3]
+                port = get_port_from_ip_table(pvt_c_id)
                 request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
                 if request_path: 
-                    print("Adding existing container")
                     add_to_kong(request_path, port)
+        except Exception as e:
+            notifier(False, e)
+            continue
 
 if __name__ == '__main__':
     print("started")
