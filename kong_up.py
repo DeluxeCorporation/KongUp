@@ -10,56 +10,56 @@ HOSTNAME = os.getenv("HOST_NAME") if os.getenv("HOST_NAME") else socket.gethostn
 HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
 
-def get_api(request_path):
+def get_api(uri):
     '''
-    Return API is API exists, else False
+    Return API if API exists, else False. Check only
+    the first uri in the api.
     '''
     apis = requests.get('http://' + KONG_HOST + ':8001/apis/').json()['data']
     for api in apis:
-        if api['request_path'] == request_path:
+        if api['uris'][0] == uri:
             return api
     return False
 
 
-def add_to_kong(request_path, port):
+def add_to_kong(uri, port):
     '''
-    Add request_path to Kong on port and HOSTNAME
+    Add uri to Kong on port and HOSTNAME
     '''
     upstream_url = "http://" + HOSTNAME + ":" + port
 
-    api = get_api(request_path)
+    api = get_api(uri)
 
     if api:
         api['upstream_url'] = upstream_url
     else:
         api = {
             "upstream_url": upstream_url,
-            "strip_request_path": True,
-            "request_path": request_path,
+            "uris": uri,
             "created_at": int(time.time())}
 
     k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
 
     if k.status_code == 201 or k.status_code == 200:
-        print("Successfully added", request_path, "to gateway")
-        notifier(True, request_path)
+        print("Successfully added", uri, "to gateway")
+        notifier(True, uri)
     elif k.status_code == 409:
         print("Could not add api to gateway", k.json())
-        notifier(False, request_path)
+        notifier(False, uri)
 
 
-def notifier(is_successful, request_path):
+def notifier(is_successful, uri):
     '''
     Send a notification to hipchat
 
     :param is_successful: (Boolean) - True if api was added successfully, false otherwise
-    :param request_path: (String) - Request path to the api that was/wasn't added
+    :param uri: (String) - Request path to the api that was/wasn't added
     '''
-    gateway_link = "https://" + KONG_HOST + ":8243" + request_path
+    gateway_link = "https://" + KONG_HOST + ":8243" + uri
     if is_successful:
-        message = '{{"color":"green","message":"{API} KongedUP (successful), {link}","notify":true,"message_format":"text"}}'.format(API=request_path, link=gateway_link)
+        message = '{{"color":"green","message":"{API} KongedUP (successful), {link}","notify":true,"message_format":"text"}}'.format(API=uri, link=gateway_link)
     else:
-        message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=request_path)
+        message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=uri)
     requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
 
 
@@ -121,7 +121,7 @@ def rewire():
                 if request_path: 
                     add_to_kong(request_path, port)
         except Exception as e:
-            notifier(False, e)
+            notifier(False, str(e))
             continue
 
 if __name__ == '__main__':
