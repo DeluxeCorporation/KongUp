@@ -5,23 +5,19 @@ import os
 import requests
 import uuid
 import time
-KONGS = {"DEV" : os.getenv("DEV_KONG_HOST"),
-         "QA" : os.getenv("QA_KONG_HOST"),
-         "UAT": os.getenv("UAT_KONG_HOST"),
-         "XUAT":os.getenv("XUAT_KONG_HOST"),
-         "PREPROD":os.getenv("PREPROD_KONG_HOST"),
-         "PROD":os.getenv("PROD_KONG_HOST")}
+
+KONG_ENVIRONMENT = os.getenv("KONG_ENVIRONMENT")
+KONG_HOST = os.getenv("KONG_HOST")
 HOSTNAME = os.getenv("HOSTNAME")
 HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
 
-def get_api(uri, environment):
+def get_api(uri):
     '''
-    Return API if API exists in the environment
-    specified, else False. Check only
+    Return API if API exists in kong, else False. Check only
     the first uri in the api.
     '''
-    KONG_HOST = KONGS[environment]
+
     apis = requests.get('http://' + KONG_HOST + ':8001/apis/').json()['data']
     for api in apis:
         if api['uris'][0] == uri:
@@ -29,13 +25,12 @@ def get_api(uri, environment):
     return False
 
 
-def add_to_kong(uri, port, environment):
+def add_to_kong(uri, port):
     '''
-    Add uri to Kong in environment on port 
+    Add uri to Kong on port 
     '''
     upstream_url = "http://" + HOSTNAME + ":" + port
-    KONG_HOST = KONGS[environment]
-    api = get_api(uri, environment)
+    api = get_api(uri)
 
     if api:
         api['upstream_url'] = upstream_url
@@ -51,19 +46,18 @@ def add_to_kong(uri, port, environment):
 
     if k.status_code == 201 or k.status_code == 200:
         print("Successfully added", uri, "to gateway")
-        notifier(True, uri, KONG_HOST)
+        notifier(True, uri)
     else:
         print("Could not add api to gateway", k.json())
-        notifier(False, uri, KONG_HOST)
+        notifier(False, uri)
 
 
-def notifier(is_successful, uri, KONG_HOST=''):
+def notifier(is_successful, uri):
     '''
     Send a notification to hipchat
 
     :param is_successful: (Boolean) - True if api was added successfully, false otherwise
     :param uri: (String) - Request path to the api that was/wasn't added
-    :KONG_HOST: (String) - hostname of the server where kong is running
     '''
     gateway_link = "https://" + KONG_HOST + ":8243" + uri
     if is_successful:
@@ -72,6 +66,20 @@ def notifier(is_successful, uri, KONG_HOST=''):
         message = '{{"color":"red","message":"{API} not KongedUP (failed)","notify":true,"message_format":"text"}}'.format(API=uri)
     requests.post(HIPCHAT_URL, data=message, headers={"Content-Type": "application/json"})
 
+
+def get_port_from_ip_table(pvt_c_id):
+    '''
+    Return exposed port by looking it up on IP tables
+    '''
+    
+    cmd = 'iptables -t nat -L -n | grep "{pvt_c_id}"'
+    cmd = cmd.format(pvt_c_id=pvt_c_id)
+    iptables = os.popen(cmd).read()
+    iptable_rows = iptables.split('\n')
+    DNAT = list(filter(lambda x: x.startswith('DNAT'), iptable_rows))[0].split()
+    dpt = list(filter(lambda x: x.startswith('dpt'), DNAT))[0]
+    port = dpt.split(':')[-1]
+    return port
 
 def listener():
     '''
@@ -89,20 +97,6 @@ def listener():
                 notifier(False, str(e))
                 continue
 
-def get_port_from_ip_table(pvt_c_id):
-    '''
-    Return exposed port by looking it up on IP tables
-    '''
-    
-    cmd = 'iptables -t nat -L -n | grep "{pvt_c_id}"'
-    cmd = cmd.format(pvt_c_id=pvt_c_id)
-    iptables = os.popen(cmd).read()
-    iptable_rows = iptables.split('\n')
-    DNAT = list(filter(lambda x: x.startswith('DNAT'), iptable_rows))[0].split()
-    dpt = list(filter(lambda x: x.startswith('dpt'), DNAT))[0]
-    port = dpt.split(':')[-1]
-    return port
-    
 def event_handler(event):
     '''
     Inspect the container, and wire it up to the gateway if GATEWAY_VISIBLE is set to "True"
@@ -115,8 +109,8 @@ def event_handler(event):
         port = get_port_from_ip_table(pvt_c_id)
         request_path = container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
         environment = container['Config']['Labels'].get('ENVIRONMENT')
-        if request_path: 
-            add_to_kong(request_path, port, environment)
+        if request_path and environment == KONG_ENVIRONMENT: 
+            add_to_kong(request_path, port)
 
 def rewire():
     cli = Client(version='auto')
@@ -130,8 +124,8 @@ def rewire():
                 port = get_port_from_ip_table(pvt_c_id)
                 request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
                 environment = container['Labels'].get('ENVIRONMENT')
-                if request_path: 
-                    add_to_kong(request_path, port, environment)
+                if request_path and environment == KONG_ENVIRONMENT: 
+                    add_to_kong(request_path, port)
         except Exception as e:
             notifier(False, str(e))
             continue
