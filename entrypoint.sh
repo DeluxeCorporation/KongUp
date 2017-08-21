@@ -1,15 +1,19 @@
 #!/bin/bash
 
-if [[ -z $KONG_HOST ]] ; then
-    missing_vars="$missing_vars KONG_HOST"
+if [[ -z $KONG_UP_KONG_ENVIRONMENT ]] ; then
+    missing_vars="$missing_vars KONG_UP_KONG_ENVIRONMENT"
 fi
 
-if [[ -z $KONG_ENVIRONMENT ]] ; then
-    missing_vars="$missing_vars KONG_ENVIRONMENT"
+if [[ -z $KONG_UP_KONG_HOST ]] ; then
+    missing_vars="$missing_vars KONG_UP_KONG_HOST"
 fi
 
-if [[ -z $HIPCHAT_URL ]] ; then
-    missing_vars="$missing_vars HIPCHAT_URL"
+if [[ -z $KONG_UP_HIPCHAT_URL ]] ; then
+    missing_vars="$missing_vars KONG_UP_HIPCHAT_URL"
+fi
+
+if [[ -z $KONG_UP_LOG_LEVEL ]] ; then
+    missing_vars="$missing_vars KONG_UP_LOG_LEVEL"
 fi
 
 if [[ $missing_vars ]] ; then
