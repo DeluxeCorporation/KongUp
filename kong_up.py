@@ -3,15 +3,51 @@ import socket
 import json
 import os
 import requests
-import uuid
 import time
+import logging
+import sys
+import nmap
+import re
 
 KONG_ENVIRONMENT = os.getenv("KONG_ENVIRONMENT")
 KONG_HOST = os.getenv("KONG_HOST")
 HOSTNAME = os.getenv("HOSTNAME")
 HIPCHAT_URL = os.getenv("HIPCHAT_URL")
 
+log = logging.getLogger('kong_up')
+log.setLevel('INFO')
+kong_up_logger = logging.StreamHandler(stream=sys.stdout)
+kong_up_logger.setLevel('INFO')
+log.addHandler(kong_up_logger)
 
+
+def get_rancher_DNS_name(container):
+    '''
+    Return the Rancher DNS name of the given container. 
+    Inspect the container and use the value in 
+    'io.rancher.stack_service.name' container label 
+    and return the DNS name
+    '''
+
+    stack_service_name = container['Config']['Labels']['io.rancher.stack_service.name']
+
+    # From : 'DEV/d-dwsotodfswconverter-gd', To: 'd-dwsotodfswconverter-gd.DEV'
+    return re.sub(r"(.*)/(.*)", r"\2.\1", stack_service_name)
+
+def get_open_port(host):
+    '''
+    Return the *first* open port on host 
+    after running a port scan using nmap. 
+    '''
+
+    nm = nmap.PortScanner()
+    open_ports = list(nm.scan(host, arguments='-PN')['scan'].values())[0]['tcp']
+
+    if len(open_ports.keys()) != 1:
+        log.fatal('Only open port per service is supported')
+    else:
+        return list(open_ports.keys())[0]
+    
 def get_api(uri):
     '''
     Return API if API exists in kong, else False. Check only
@@ -41,14 +77,13 @@ def add_to_kong(uri, port):
             "name": uri[1:],
             "created_at": int(time.time())}
 
-    print("request" + str(api))
     k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
 
     if k.status_code == 201 or k.status_code == 200:
-        print("Successfully added", uri, "to gateway")
+        log.info("Successfully added %s to gateway", uri)
         notifier(True, uri)
     else:
-        print("Could not add api to gateway", k.json())
+        log.error("Could not add api to gateway: %s", str(k.json()))
         notifier(False, uri)
 
 
@@ -86,10 +121,12 @@ def listener():
     Listen to docker events, and invoke event_handler if a
     container was started.
     '''
+    log.info('Listening for Docker events')
     cli = Client(version='auto')
     for event in cli.events():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
+            log.info('Event - Container starting: %s', event)
             time.sleep(5)
             try:
                 event_handler(event)
@@ -97,40 +134,56 @@ def listener():
                 notifier(False, str(e))
                 continue
 
+def get_uri(container):
+    '''
+    Return the value associated with the label 
+    GATEWAY_REQUEST_PATH
+    '''
+    return container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
+
+def add_container_to_kong(container):
+    host = get_rancher_DNS_name(container)
+    port = get_open_port(host)
+    uri  = get_uri(container)
+
+    if port:
+        upstream_url = "http://" + host + ":" + str(port)
+        api = get_api(uri)
+        if api:
+            api['upstream_url'] = upstream_url
+        else:
+            api = {
+            "upstream_url": upstream_url,
+            "uris": uri,
+            "name": uri[1:],
+            "created_at": int(time.time())}
+            
+        k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
+
+        if k.status_code == 201 or k.status_code == 200:
+            log.info("Successfully added %s to gateway", uri)
+            notifier(True, uri)
+        else:
+            log.error("Could not add api to gateway: %s", str(k.json()))
+            notifier(False, uri)
+
 def event_handler(event):
     '''
     Inspect the container, and wire it up to the gateway if GATEWAY_VISIBLE is set to "True"
     '''
     cli = Client(version='auto')
     container = cli.inspect_container(event['id'])
+    gateway_visible = container['Config']['Labels'].get('GATEWAY_VISIBLE') == "True"
+    request_path = container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
+    environment = container['Config']['Labels'].get('ENVIRONMENT')
+      
+    if environment == KONG_ENVIRONMENT and all([gateway_visible, request_path, container]):
+        add_container_to_kong(container)
 
-    if container['Config']['Labels'].get('GATEWAY_VISIBLE') == "True":
-        pvt_c_id = container['Config']['Labels'].get('io.rancher.container.ip')[:-3]
-        port = get_port_from_ip_table(pvt_c_id)
-        request_path = container['Config']['Labels'].get('GATEWAY_REQUEST_PATH')
-        environment = container['Config']['Labels'].get('ENVIRONMENT')
-        if request_path and environment == KONG_ENVIRONMENT: 
-            add_to_kong(request_path, port)
-
-def rewire():
-    cli = Client(version='auto')
-    time.sleep(5)
-    containers = cli.containers()
-    for container in containers:
-        try:
-            if container['Labels'].get('GATEWAY_VISIBLE') == "True":
-                print(container['Names'])
-                pvt_c_id = container['Labels'].get('io.rancher.container.ip')[:-3]
-                port = get_port_from_ip_table(pvt_c_id)
-                request_path = container['Labels'].get('GATEWAY_REQUEST_PATH')
-                environment = container['Labels'].get('ENVIRONMENT')
-                if request_path and environment == KONG_ENVIRONMENT: 
-                    add_to_kong(request_path, port)
-        except Exception as e:
-            notifier(False, str(e))
-            continue
 
 if __name__ == '__main__':
-    print("started")
-    rewire()
+    log.info("KongUp started")
     listener()
+
+
+
