@@ -57,9 +57,11 @@ def get_open_port(host):
             log.warning('Service not started yet. retrying attempt: %i', attempt)
             continue
         else:
-            open_ports = list(scan_results.values())[0].get('tcp')
-            if not(open_ports) or len(open_ports.keys()) != 1:
-                log.warning('Number of ports not equal to 1, retrying attempt %i', attempt  )
+            open_ports = list(scan_results.values())[0].get('tcp', {})
+            if len(open_ports.keys()) != 1:
+                log.warning('Exactly one port supported, but %i given, retrying attempt %i'
+                            ,len(open_ports.keys()), attempt)
+                continue
             else:
                 return list(open_ports.keys())[0]
 
