@@ -44,18 +44,24 @@ def get_open_port(host):
     after running a port scan using nmap.
     '''
 
+    wait_time = 1
     scanner = nmap.PortScanner()
-    scan_results = scanner.scan(host, arguments='-PN').get('scan')
 
-    if not bool(scan_results):
-        log.warning('No ports open for %s, skipping', host)
-    else:
-        open_ports = list(scan_results.values())[0].get('tcp')
+    for attempt in range(5):
+        wait_time *= 2
+        log.info('Sleeping for %i seconds', wait_time)
+        time.sleep(wait_time)
+        scan_results = scanner.scan(host, arguments='-PN').get('scan')
 
-        if not(open_ports) or len(open_ports.keys()) != 1:
-            log.fatal('Only open port per service is supported')
+        if not bool(scan_results):
+            log.warning('Service not started yet. retrying attempt: %i', attempt)
+            continue
         else:
-            return list(open_ports.keys())[0]
+            open_ports = list(scan_results.values())[0].get('tcp')
+            if not(open_ports) or len(open_ports.keys()) != 1:
+                log.warning('Number of ports not equal to 1, retrying attempt %i', attempt  )
+            else:
+                return list(open_ports.keys())[0]
 
 def get_api(uri):
     '''
@@ -161,7 +167,6 @@ def listener():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
             log.info('Event - Container starting: %s', event)
-            time.sleep(10)
             try:
                 event_handler(event)
             except Exception as event_exception:
