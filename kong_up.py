@@ -125,6 +125,8 @@ def add_container_to_kong(container):
             else:
                 log.error("Could not add api to gateway: %s", str(k.json()))
                 notifier(False, uri)
+    else:
+        log.info('Not Adding to Kong: %s', str(container))
 
 def notifier(is_successful, uri):
     '''
@@ -159,7 +161,7 @@ def listener():
         event = json.loads(event.decode('utf-8'))
         if event.get('status') == 'start':
             log.info('Event - Container starting: %s', event)
-            time.sleep(5)
+            time.sleep(10)
             try:
                 event_handler(event)
             except Exception as event_exception:
