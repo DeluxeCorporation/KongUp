@@ -100,6 +100,14 @@ def get_uri(container):
 
     return container['Config']['Labels'].get('GATEWAY_URI')
 
+def format_api_name(name):
+    '''
+    Return the name after so that it complies with Kong's 
+    standards
+    '''
+    
+    return name.replace("/", "-")
+
 def add_container_to_kong(container):
     '''
     Use the info in the container to add it as an API to Kong
@@ -122,7 +130,7 @@ def add_container_to_kong(container):
                 api = {
                     "upstream_url": upstream_url,
                     "uris": uri,
-                    "name": uri[1:],
+                    "name": format_api_name(uri[1:]),
                     "created_at": int(time.time())}
 
             k = requests.put('http://' + KONG_HOST + ':8001/apis/', data=api)
