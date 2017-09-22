@@ -107,12 +107,9 @@ def get_strip_uri(container):
     default True.
     '''
 
-    # '' returns True (True ^ False)
-    # 'False' returns False (False ^ False)
-    # 'True' returns 'True' (False ^ True)
-    # 'Anything else' returns False (False ^ False)
-    return (container['Config']['Labels'].get('STRIP_URI', True) == True
-            ^ container['Config']['Labels'].get('STRIP_URI', True) == 'True')
+    strip_uri = container['Config']['Labels'].get('STRIP_URI', True)
+    trues = ['True', '', True]
+    return strip_uri in trues
 
 
 
