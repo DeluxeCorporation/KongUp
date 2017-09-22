@@ -107,8 +107,8 @@ def get_strip_uri(container):
     default True.
     '''
 
-    strip_uri = container['Config']['Labels'].get('STRIP_URI', True)
-    trues = ['True', '', True]
+    strip_uri = container['Coknfig']['Labels'].get('STRIP_URI','')
+    trues = ['True', '']
     return strip_uri in trues
 
 
