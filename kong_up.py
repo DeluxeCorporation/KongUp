@@ -54,7 +54,7 @@ def get_open_port(host):
         scan_results = scanner.scan(host, arguments='-PN').get('scan')
 
         if not bool(scan_results):
-            log.warning('Service not started yet. retrying attempt: %i', attempt)
+            log.warning('Service not started yet. Scan results %s. retrying attempt: %i', str(scan_results), attempt)
             continue
         else:
             open_ports = list(scan_results.values())[0].get('tcp', {})
