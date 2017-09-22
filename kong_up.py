@@ -16,8 +16,8 @@ from docker import Client
 
 KONG_ENVIRONMENT = os.getenv("KONG_UP_KONG_ENVIRONMENT")
 KONG_HOST = os.getenv("KONG_UP_KONG_HOST")
-HIPCHAT_URL = os.getenv("KONG_UP_HIPCHAT_URL")
-LOG_LEVEL = os.getenv("KONG_UP_LOG_LEVEL")
+KONG_HIPCHAT_URL = os.getenv("KONG_UP_HIPCHAT_URL")
+KONG_LOG_LEVEL = os.getenv("KONG_UP_LOG_LEVEL")
 
 log = logging.getLogger('kong_up')
 log.setLevel(LOG_LEVEL)
@@ -100,6 +100,22 @@ def get_uri(container):
 
     return container['Config']['Labels'].get('GATEWAY_URI')
 
+def get_strip_uri(container):
+    '''
+    Return a bool version of the value
+    associated with the label 'STRIP_URI'. 
+    default True.
+    '''
+
+    # '' returns True (True ^ False)
+    # 'False' returns False (False ^ False)
+    # 'True' returns 'True' (False ^ True)
+    # 'Anything else' returns False (False ^ False)
+    return (container['Config']['Labels'].get('STRIP_URI', True) == True
+            ^ container['Config']['Labels'].get('STRIP_URI', True) == 'True')
+
+
+
 def format_api_name(name):
     '''
     Return the name after so that it complies with Kong's 
@@ -115,6 +131,7 @@ def add_container_to_kong(container):
 
     gateway_visible = get_gateway_visibility(container)
     environment = get_environment(container)
+    strip_uri = get_strip_uri(container)
 
     if gateway_visible and environment == KONG_ENVIRONMENT:
         host = get_rancher_dns_name(container)
@@ -126,10 +143,12 @@ def add_container_to_kong(container):
             api = get_api(uri)
             if api:
                 api['upstream_url'] = upstream_url
+                api['strip_uri'] = strip_uri
             else:
                 api = {
                     "upstream_url": upstream_url,
                     "uris": uri,
+                    "strip_uri" : strip_uri,
                     "name": format_api_name(uri[1:]),
                     "created_at": int(time.time())}
 
