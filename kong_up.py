@@ -16,8 +16,8 @@ from docker import Client
 
 KONG_ENVIRONMENT = os.getenv("KONG_UP_KONG_ENVIRONMENT")
 KONG_HOST = os.getenv("KONG_UP_KONG_HOST")
-KONG_HIPCHAT_URL = os.getenv("KONG_UP_HIPCHAT_URL")
-KONG_LOG_LEVEL = os.getenv("KONG_UP_LOG_LEVEL")
+HIPCHAT_URL = os.getenv("KONG_UP_HIPCHAT_URL")
+LOG_LEVEL = os.getenv("KONG_UP_LOG_LEVEL")
 
 log = logging.getLogger('kong_up')
 log.setLevel(LOG_LEVEL)
