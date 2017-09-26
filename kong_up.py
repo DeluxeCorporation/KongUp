@@ -100,6 +100,19 @@ def get_uri(container):
 
     return container['Config']['Labels'].get('GATEWAY_URI')
 
+def get_strip_uri(container):
+    '''
+    Return a bool version of the value
+    associated with the label 'STRIP_URI'. 
+    default True.
+    '''
+
+    strip_uri = container['Config']['Labels'].get('STRIP_URI','')
+    trues = ['True', '']
+    return strip_uri in trues
+
+
+
 def format_api_name(name):
     '''
     Return the name after so that it complies with Kong's 
@@ -115,6 +128,7 @@ def add_container_to_kong(container):
 
     gateway_visible = get_gateway_visibility(container)
     environment = get_environment(container)
+    strip_uri = get_strip_uri(container)
 
     if gateway_visible and environment == KONG_ENVIRONMENT:
         host = get_rancher_dns_name(container)
@@ -126,10 +140,12 @@ def add_container_to_kong(container):
             api = get_api(uri)
             if api:
                 api['upstream_url'] = upstream_url
+                api['strip_uri'] = strip_uri
             else:
                 api = {
                     "upstream_url": upstream_url,
                     "uris": uri,
+                    "strip_uri" : strip_uri,
                     "name": format_api_name(uri[1:]),
                     "created_at": int(time.time())}
 
