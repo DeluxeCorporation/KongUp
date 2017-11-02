@@ -114,8 +114,7 @@ def get_strip_uri(container):
 
 def get_lb_source_port(container):
     '''
-    Return True if GATEWAY_VISIBLE label is set to "True", False
-    otherwise.
+    Return the lb source port label on the container
     '''
 
     return container['Config']['Labels'].get('lb_source_port')
