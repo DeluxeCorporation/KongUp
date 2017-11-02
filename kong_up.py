@@ -112,7 +112,13 @@ def get_strip_uri(container):
     return strip_uri in trues
 
 
+def get_lb_source_port(container):
+    '''
+    Return the lb source port label on the container
+    '''
 
+    return container['Config']['Labels'].get('lb_source_port')
+    
 def format_api_name(name):
     '''
     Return the name after so that it complies with Kong's 
@@ -129,10 +135,11 @@ def add_container_to_kong(container):
     gateway_visible = get_gateway_visibility(container)
     environment = get_environment(container)
     strip_uri = get_strip_uri(container)
-
+    lb_port = get_lb_source_port(container)
+    
     if gateway_visible and environment == KONG_ENVIRONMENT:
         host = get_rancher_dns_name(container)
-        port = get_open_port(host)
+        port = lb_port if lb_port else get_open_port(host)
         uri = get_uri(container)
 
         if  all([host, uri, port]):
