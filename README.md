@@ -174,6 +174,7 @@ KongUp was tested on the following environment
 -   Rancher == 1.6.2
 -   Kong == 0.11.0
 -   Docker == 1.12.6
+-   HipChat == V2 API
 
 ## License<a id="sec-1-10" name="sec-1-10"></a>
 
