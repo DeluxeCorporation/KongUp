@@ -41,7 +41,7 @@ specified via environment variables. KongUp runs a port scan on the
 API container to automatically find the port where the application is
 running on.  Furthermore, KongUp sends notifications via HipChat.
 
-![img](overview.png)
+![img](docs/overview.png)
 
 ## Labels<a id="sec-1-3" name="sec-1-3"></a>
 
