@@ -50,11 +50,11 @@ want KongUp to process and add to Kong.
 ** Environment Variables 
 
 
-| Variable                 | Description                                                      | Required |
+| Variable                   | Description                                                      | Required |
 | KONG\_UP\_KONG_ENVIRONMENT | Which environment is this kong for?                              | Yes      |
-| KONG\_UP\_KONG_HOST      | Hostname of machine where Kong is installed                      | Yes      |
-| KONG\_UP\_HIPCHAT_URL    | Hipchat link to post notifications to                            | Yes      |
-| KONG\_UP\_LOG_LEVEL      | Level of logging. Must be one of DEBUG, INFO, WARN, ERROR, FATAL | Yes      |
+| KONG\_UP\_KONG_HOST        | Hostname of machine where Kong is installed                      | Yes      |
+| KONG\_UP\_HIPCHAT_URL      | Hipchat link to post notifications to                            | No       |
+| KONG\_UP\_LOG_LEVEL        | Level of logging. Must be one of DEBUG, INFO, WARN, ERROR, FATAL | Yes      |
 
 
 ** Running in Docker
@@ -88,6 +88,7 @@ KongUp was tested on the following environment
 - Rancher == 1.6.2
 - Kong == 0.11.0
 - Docker == 1.12.6
+- HipChat == V2 API
 
 ** License
 

@@ -197,9 +197,9 @@ def notifier(is_successful, uri):
                        "message":"{API} not KongedUP (failed)",
                        "notify":true,
                        "message_format":"text"}}'''.format(API=uri)
-
-    requests.post(HIPCHAT_URL, data=message, headers={
-        "Content-Type": "application/json"})
+    if HIPCHAT_URL:
+        requests.post(HIPCHAT_URL, data=message, headers={
+            "Content-Type": "application/json"})
 
 
 def listener():
