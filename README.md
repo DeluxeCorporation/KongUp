@@ -20,6 +20,7 @@
 </div>
 </div>
 
+
 # KongUp<a id="sec-1" name="sec-1"></a>
 
 ## Introduction<a id="sec-1-1" name="sec-1-1"></a>
@@ -33,14 +34,14 @@ inspects a container's labels to add it to Kong.
 
 KongUp binds to the docker socket on each host VM and listens for
 "start" events. It them inspects the container that just started and
-examines its labels. If GATEWAY\\<sub>VISIBLE</sub> is True, and GATEWAY\\<sub>URI</sub> is
+examines its labels. If GATEWAY\\\_VISIBLE is True, and GATEWAY\\\_URI is
 provided, and if the container's environment matches with KongUp's
 environment, KongUp will add it as an API to the Kong gateway
 specified via environment variables. KongUp runs a port scan on the
 API container to automatically find the port where the application is
 running on.  Furthermore, KongUp sends notifications via HipChat.
 
-![img](docs/overview.png)
+![img](overview.png)
 
 ## Labels<a id="sec-1-3" name="sec-1-3"></a>
 
@@ -66,14 +67,14 @@ want KongUp to process and add to Kong.
 
 
 <tr>
-<td class="left">GATEWAY\\<sub>VISIBLE</sub></td>
+<td class="left">GATEWAY\_VISIBLE</td>
 <td class="left">Either True or False, Will Only add to API if set to True.</td>
 <td class="left">Yes</td>
 </tr>
 
 
 <tr>
-<td class="left">GATEWA\Y<sub>URI</sub></td>
+<td class="left">GATEWAY\_URI</td>
 <td class="left">Kong uri (kong version >= 0.10.0) property</td>
 <td class="left">Yes</td>
 </tr>
@@ -87,7 +88,7 @@ want KongUp to process and add to Kong.
 
 
 <tr>
-<td class="left">STRIP\\<sub>URI</sub></td>
+<td class="left">STRIP\_URI</td>
 <td class="left">When matching an API via one of the uris prefixes, strip that matching prefix from the upstream URI to be requested. Optional. Defaults to 'True'. Value must be one of 'True', 'False', or ''. Your services must have some docker labels on them in order for KongUp to detect it.</td>
 <td class="left">Yes</td>
 </tr>
@@ -115,28 +116,28 @@ want KongUp to process and add to Kong.
 
 
 <tr>
-<td class="left">KONG\\<sub>UP\\</sub><sub>KONG</sub><sub>ENVIRONMENT</sub></td>
+<td class="left">KONG\_UP\_KONG\_ENVIRONMENT</td>
 <td class="left">Which environment is this kong for?</td>
 <td class="left">Yes</td>
 </tr>
 
 
 <tr>
-<td class="left">KONG\\<sub>UP\\</sub><sub>KONG</sub><sub>HOST</sub></td>
+<td class="left">KONG\_UP\_KONG\_HOST</td>
 <td class="left">Hostname of machine where Kong is installed</td>
 <td class="left">Yes</td>
 </tr>
 
 
 <tr>
-<td class="left">KONG\\<sub>UP\\</sub><sub>HIPCHAT</sub><sub>URL</sub></td>
+<td class="left">KONG\_UP\_HIPCHAT\_URL</td>
 <td class="left">Hipchat link to post notifications to</td>
-<td class="left">Yes</td>
+<td class="left">No</td>
 </tr>
 
 
 <tr>
-<td class="left">KONG\\<sub>UP\\</sub><sub>LOG</sub><sub>LEVEL</sub></td>
+<td class="left">KONG\_UP\_LOG\_LEVEL</td>
 <td class="left">Level of logging. Must be one of DEBUG, INFO, WARN, ERROR, FATAL</td>
 <td class="left">Yes</td>
 </tr>
@@ -145,11 +146,11 @@ want KongUp to process and add to Kong.
 
 ## Running in Docker<a id="sec-1-5" name="sec-1-5"></a>
 
-\`\`\` docker run -d \\ -v /run/docker.sock:/var/run/docker.sock \\ -e
-KONG<sub>UP</sub><sub>KONG</sub><sub>ENVIRONMENT</sub>="DEV" \\ -e
-KONG<sub>UP</sub><sub>KONG</sub><sub>HOST</sub>="dev.api.deluxe.com" \\ -e
-KONG<sub>UP</sub><sub>HIPCHAT</sub><sub>URL</sub>="xxx.com"\\ -e KONG<sub>UP</sub><sub>LOG</sub><sub>LEVEL</sub>="DEBUG"\\
-kong<sub>up</sub><sub>image</sub><sub>name</sub> \`\`\`
+    docker run -d \ -v /run/docker.sock:/var/run/docker.sock \ -e
+    KONG_UP_KONG_ENVIRONMENT="DEV" \ -e
+    KONG_UP_KONG_HOST="dev.api.deluxe.com" \ -e
+    KONG_UP_HIPCHAT_URL="xxx.com"\ -e KONG_UP_LOG_LEVEL="DEBUG"\
+    kong_up_image_name
 
 ## Running in Rancher<a id="sec-1-6" name="sec-1-6"></a>
 

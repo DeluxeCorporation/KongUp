@@ -1,3 +1,4 @@
+#+OPTIONS: ^:nil
 * KongUp
 
 ** Introduction
@@ -41,29 +42,32 @@ The following labels must be set on services (containers) that you
 want KongUp to process and add to Kong.
 
 | Label           | Description                                                                                                                                                                                                                                                                         | Required |
-| GATEWAY\_VISIBLE | Either True or False, Will Only add to API if set to True.                                                                                                                                                                                                                          | Yes      |
-| GATEWA\Y_URI    | Kong uri (kong version >= 0.10.0) property                                                                                                                                                                                                                                          | Yes      |
+| GATEWAY_VISIBLE  | Either True or False, Will Only add to API if set to True.                                                                                                                                                                                                                          | Yes      |
+| GATEWAY_URI     | Kong uri (kong version >= 0.10.0) property                                                                                                                                                                                                                                          | Yes      |
 | ENVIRONMENT     | The environment of the gateway to which the API should be added                                                                                                                                                                                                                     | Yes      |
-| STRIP\_URI      | When matching an API via one of the uris prefixes, strip that matching prefix from the upstream URI to be requested. Optional. Defaults to 'True'. Value must be one of 'True', 'False', or ''. Your services must have some docker labels on them in order for KongUp to detect it. | Yes      |
+| STRIP_URI       | When matching an API via one of the uris prefixes, strip that matching prefix from the upstream URI to be requested. Optional. Defaults to 'True'. Value must be one of 'True', 'False', or ''. Your services must have some docker labels on them in order for KongUp to detect it. | Yes      |
 
 
 ** Environment Variables 
 
 
 | Variable                   | Description                                                      | Required |
-| KONG\_UP\_KONG_ENVIRONMENT | Which environment is this kong for?                              | Yes      |
-| KONG\_UP\_KONG_HOST        | Hostname of machine where Kong is installed                      | Yes      |
-| KONG\_UP\_HIPCHAT_URL      | Hipchat link to post notifications to                            | No       |
-| KONG\_UP\_LOG_LEVEL        | Level of logging. Must be one of DEBUG, INFO, WARN, ERROR, FATAL | Yes      |
+| KONG_UP_KONG_ENVIRONMENT   | Which environment is this kong for?                              | Yes      |
+| KONG_UP_KONG_HOST          | Hostname of machine where Kong is installed                      | Yes      |
+| KONG_UP_HIPCHAT_URL        | Hipchat link to post notifications to                            | No       |
+| KONG_UP_LOG_LEVEL          | Level of logging. Must be one of DEBUG, INFO, WARN, ERROR, FATAL | Yes      |
 
 
 ** Running in Docker
 
-``` docker run -d \ -v /run/docker.sock:/var/run/docker.sock \ -e
+#+BEGIN_SRC 
+docker run -d \ -v /run/docker.sock:/var/run/docker.sock \ -e
 KONG_UP_KONG_ENVIRONMENT="DEV" \ -e
 KONG_UP_KONG_HOST="dev.api.deluxe.com" \ -e
 KONG_UP_HIPCHAT_URL="xxx.com"\ -e KONG_UP_LOG_LEVEL="DEBUG"\
-kong_up_image_name ```
+kong_up_image_name
+#+END_SRC
+
 
 
 ** Running in Rancher
